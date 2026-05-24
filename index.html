@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chess Challenge</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 30px;
+      background:
+        radial-gradient(circle at top, #1b1b1b 0%, #0b0b0b 60%);
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 3.5rem;
+      margin-bottom: 10px;
+      color: #f7931a;
+      text-shadow: 0 0 20px rgba(247,147,26,0.4);
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #999;
+      margin-bottom: 50px;
+      font-size: 1.1rem;
+    }
+
+    .roll-section {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    button {
+      background: linear-gradient(135deg, #f7931a, #ffb347);
+      border: none;
+      color: black;
+      padding: 18px 40px;
+      font-size: 1.2rem;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+      box-shadow:
+        0 0 25px rgba(247,147,26,0.4);
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #result-container {
+      margin-top: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    #rolling-text {
+      color: #666;
+      letter-spacing: 3px;
+      margin-bottom: 10px;
+      height: 20px;
+    }
+
+    #result {
+      width: 180px;
+      height: 180px;
+      border-radius: 24px;
+      background: linear-gradient(145deg, #1f1f1f, #101010);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 5rem;
+      font-weight: bold;
+      color: #f7931a;
+      border: 3px solid #333;
+      box-shadow:
+        0 0 40px rgba(247,147,26,0.15),
+        inset 0 0 25px rgba(255,255,255,0.03);
+      transition: 0.2s;
+    }
+
+    .rolling {
+      animation: pulse 0.08s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from {
+        transform: scale(1);
+      }
+      to {
+        transform: scale(1.05);
+      }
+    }
+
+    .winner-flash {
+      animation: winnerFlash 0.6s ease;
+    }
+
+    @keyframes winnerFlash {
+      0% {
+        transform: scale(0.8);
+        box-shadow: 0 0 0 rgba(247,147,26,0);
+      }
+      50% {
+        transform: scale(1.15);
+        box-shadow: 0 0 50px rgba(247,147,26,0.8);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .table-container {
+      max-width: 1100px;
+      margin: auto;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #141414;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 18px;
+      text-align: center;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    th {
+      background: #1d1d1d;
+      color: #f7931a;
+      font-size: 1rem;
+    }
+
+    tr.available {
+      background: #151515;
+    }
+
+    tr.completed {
+      background: #102010;
+      color: #66ff99;
+    }
+
+    tr:hover {
+      background: #1f1f1f;
+    }
+
+    .status {
+      font-weight: bold;
+    }
+
+    .available-text {
+      color: #f5c542;
+    }
+
+    .completed-text {
+      color: #66ff99;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 700px) {
+
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      #result {
+        width: 140px;
+        height: 140px;
+        font-size: 4rem;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>♟ ChessUp2 Challenge</h1>
+
+  <div class="subtitle">
+    Roll the dice to select your difficulty.
+  </div>
+
+  <div class="roll-section">
+
+    <button id="roll-button" onclick="rollLevel()">
+      🎲 ROLL RANDOM LEVEL
+    </button>
+
+    <div id="result-container">
+      <div id="rolling-text"></div>
+      <div id="result">?</div>
+    </div>
+
+  </div>
+
+  <div class="table-container">
+
+    <table>
+      <thead>
+        <tr>
+          <th>Level</th>
+          <th>Prize</th>
+          <th>GBP Value</th>
+          <th>Status</th>
+          <th>Winner</th>
+        </tr>
+      </thead>
+
+      <tbody id="levels-table"></tbody>
+
+    </table>
+
+  </div>
+
+  <div class="footer">
+    Sponsored by Apex Champ Traders.
+  </div>
+
+  <script>
+
+    // =====================================
+    // MANUALLY EDIT WINNERS HERE
+    // =====================================
+
+    const levels = [
+
+      { level: 1, winner: null },
+      { level: 2, winner: null },
+      { level: 3, winner: null },
+      { level: 4, winner: null },
+      { level: 5, winner: null },
+      { level: 6, winner: null },
+      { level: 7, winner: null },
+      { level: 8, winner: null },
+      { level: 9, winner: null },
+      { level: 10, winner: null },
+      { level: 11, winner: null },
+      { level: 12, winner: null },
+      { level: 13, winner: null },
+      { level: 14, winner: null },
+      { level: 15, winner: null },
+      { level: 16, winner: null },
+      { level: 17, winner: null },
+      { level: 18, winner: null },
+      { level: 19, winner: null },
+      { level: 20, winner: "Rink" }
+
+    ];
+
+    let btcPriceGBP = 0;
+
+    // =====================================
+    // FETCH BTC PRICE
+    // =====================================
+
+    async function fetchBitcoinPrice() {
+
+      try {
+
+        const response = await fetch(
+          'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=gbp'
+        );
+
+        const data = await response.json();
+
+        btcPriceGBP = data.bitcoin.gbp;
+
+        renderTable();
+
+      } catch (error) {
+
+        console.error('CoinGecko API Error:', error);
+
+      }
+    }
+
+    // =====================================
+    // SATS TO GBP
+    // =====================================
+
+    function satsToGBP(sats) {
+
+      if (!btcPriceGBP) return "...";
+
+      const btcAmount = sats / 100000000;
+
+      return "£" + (btcAmount * btcPriceGBP).toFixed(2);
+    }
+
+    // =====================================
+    // TABLE RENDER
+    // =====================================
+
+    function renderTable() {
+
+      const table = document.getElementById("levels-table");
+
+      table.innerHTML = "";
+
+      levels.forEach(item => {
+
+        const sats = item.level * 2000;
+
+        const completed = item.winner !== null;
+
+        const row = document.createElement("tr");
+
+        row.className =
+          completed ? "completed" : "available";
+
+        row.innerHTML = `
+          <td>${item.level}</td>
+          <td>${sats.toLocaleString()} SATS</td>
+          <td>${satsToGBP(sats)}</td>
+          <td class="status">
+            <span class="${
+              completed
+                ? 'completed-text'
+                : 'available-text'
+            }">
+              ${
+                completed
+                  ? 'COMPLETED'
+                  : 'AVAILABLE'
+              }
+            </span>
+          </td>
+          <td>${item.winner || '-'}</td>
+        `;
+
+        table.appendChild(row);
+
+      });
+    }
+
+    // =====================================
+    // DRAMATIC ROLL
+    // =====================================
+
+    async function rollLevel() {
+
+      const button =
+        document.getElementById("roll-button");
+
+      const result =
+        document.getElementById("result");
+
+      const rollingText =
+        document.getElementById("rolling-text");
+
+      const availableLevels =
+        levels.filter(
+          item => item.winner === null
+        );
+
+      if (availableLevels.length === 0) {
+
+        result.textContent = "✓";
+
+        rollingText.textContent =
+          "ALL LEVELS COMPLETE";
+
+        return;
+      }
+
+      button.disabled = true;
+
+      result.classList.add("rolling");
+
+      rollingText.textContent =
+        "ROLLING...";
+
+      // fake rolling animation
+
+      let animationCount = 0;
+
+      const rollAnimation = setInterval(() => {
+
+        const fakeNumber =
+          Math.floor(Math.random() * 20) + 1;
+
+        result.textContent = fakeNumber;
+
+        animationCount++;
+
+      }, 80);
+
+      // wait before revealing result
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 2500)
+      );
+
+      clearInterval(rollAnimation);
+
+      // actual chosen level
+
+      const chosen =
+        availableLevels[
+          Math.floor(
+            Math.random() *
+            availableLevels.length
+          )
+        ];
+
+      result.classList.remove("rolling");
+
+      result.textContent = chosen.level;
+
+	const sats = chosen.level * 2000;
+
+	rollingText.textContent =
+	  `🏆 ${sats.toLocaleString()} SATS  •  ~${satsToGBP(sats)} GBP`;
+
+      result.classList.add("winner-flash");
+
+      setTimeout(() => {
+
+        result.classList.remove("winner-flash");
+
+      }, 700);
+
+      button.disabled = false;
+    }
+
+    // =====================================
+    // INIT
+    // =====================================
+
+    fetchBitcoinPrice();
+
+    renderTable();
+
+  </script>
+
+</body>
+</html>
