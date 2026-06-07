@@ -155,6 +155,12 @@
       font-size: 0.9rem;
     }
 
+    #scoreboard {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 1.2rem;
+    }
+
     @media (max-width: 700px) {
       h1 { font-size: 2.5rem; }
       #result { width: 140px; height: 140px; font-size: 4rem; }
@@ -204,6 +210,9 @@
 
   </div>
 
+  <!-- 🏆 SCOREBOARD -->
+  <div id="scoreboard"></div>
+
   <div class="footer">
     Sponsored by Apex Champ Traders.
   </div>
@@ -211,71 +220,99 @@
 <script>
 
 const levels = [
-  { level: 1, winner: "Bucky" },
-  { level: 2, winner: null },
-  { level: 3, winner: "Shandalf" },
-  { level: 4, winner: "Shandalf" },
-  { level: 5, winner: "Bucky" },
-  { level: 6, winner: "Bucky" },
-  { level: 7, winner: "Shandalf" },
-  { level: 8, winner: null },
-  { level: 9, winner: "Bucky" },
-  { level: 10, winner: null },
-  { level: 11, winner: null },
-  { level: 12, winner: null },
-  { level: 13, winner: null },
-  { level: 14, winner: null },
-  { level: 15, winner: null },
-  { level: 16, winner: null },
-  { level: 17, winner: null },
-  { level: 18, winner: null },
-  { level: 19, winner: null },
-  { level: 20, winner: null }
+
+  // 400 ELO (1–6)
+  { level: 1, elo: 400, reward: 2000, winner: "Bucky" },
+  { level: 2, elo: 400, reward: 2000, winner: null },
+  { level: 3, elo: 400, reward: 2000, winner: null },
+  { level: 4, elo: 400, reward: 2000, winner: null },
+  { level: 5, elo: 400, reward: 2000, winner: null },
+  { level: 6, elo: 400, reward: 2000, winner: null },
+
+  // 500 ELO...
+  { level: 7, elo: 500, reward: 3000, winner: null },
+  { level: 8, elo: 500, reward: 3000, winner: null },
+  { level: 9, elo: 500, reward: 3000, winner: null },
+  { level: 10, elo: 500, reward: 3000, winner: null },
+  { level: 11, elo: 500, reward: 3000, winner: null },
+
+  // 600–1500 (unchanged)
+  { level: 12, elo: 600, reward: 6000, winner: "Shandalf" },
+  { level: 13, elo: 600, reward: 4000, winner: null },
+  { level: 14, elo: 600, reward: 4000, winner: null },
+  { level: 15, elo: 600, reward: 4000, winner: null },
+  { level: 16, elo: 600, reward: 4000, winner: null },
+
+  { level: 17, elo: 700, reward: 8000, winner: "Shandalf" },
+  { level: 18, elo: 700, reward: 5000, winner: null },
+  { level: 19, elo: 700, reward: 5000, winner: null },
+  { level: 20, elo: 700, reward: 5000, winner: null },
+
+  { level: 21, elo: 800, reward: 10000, winner: "Bucky" },
+  { level: 22, elo: 800, reward: 6000, winner: null },
+  { level: 23, elo: 800, reward: 6000, winner: null },
+  { level: 24, elo: 800, reward: 6000, winner: null },
+
+  { level: 25, elo: 900, reward: 12000, winner: "Bucky" },
+  { level: 26, elo: 900, reward: 8000, winner: null },
+  { level: 27, elo: 900, reward: 8000, winner: null },
+  { level: 28, elo: 900, reward: 8000, winner: null },
+
+  { level: 29, elo: 1000, reward: 14000, winner: "Shandalf" },
+  { level: 30, elo: 1000, reward: 10000, winner: null },
+  { level: 31, elo: 1000, reward: 10000, winner: null },
+  { level: 32, elo: 1000, reward: 10000, winner: null },
+
+  { level: 33, elo: 1100, reward: 12000, winner: null },
+  { level: 34, elo: 1100, reward: 12000, winner: null },
+  { level: 35, elo: 1100, reward: 12000, winner: null },
+  { level: 36, elo: 1100, reward: 12000, winner: null },
+
+  { level: 37, elo: 1200, reward: 18000, winner: "Bucky" },
+  { level: 38, elo: 1200, reward: 15000, winner: null },
+  { level: 39, elo: 1200, reward: 15000, winner: null },
+
+  { level: 40, elo: 1300, reward: 20000, winner: null },
+  { level: 41, elo: 1400, reward: 35000, winner: null },
+  { level: 42, elo: 1500, reward: 50000, winner: null }
+
 ];
 
 let btcPriceGBP = 0;
 
-// BTC price
 async function fetchBitcoinPrice() {
   try {
-    const res = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=gbp'
-    );
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=gbp');
     const data = await res.json();
     btcPriceGBP = data.bitcoin.gbp;
     renderTable();
+    renderScores();
   } catch (e) {
     console.error(e);
   }
 }
 
-// SATS → GBP
 function satsToGBP(sats) {
   if (!btcPriceGBP) return "...";
   const btc = sats / 100000000;
   return "£" + (btc * btcPriceGBP).toFixed(2);
 }
 
-// TABLE
 function renderTable() {
-
   const table = document.getElementById("levels-table");
   table.innerHTML = "";
 
   levels.forEach(item => {
-
-    const sats = item.level * 2000;
-    const elo = 300 + (item.level * 100);
+    const row = document.createElement("tr");
     const completed = item.winner !== null;
 
-    const row = document.createElement("tr");
     row.className = completed ? "completed" : "available";
 
     row.innerHTML = `
       <td>${item.level}</td>
-      <td>${elo}</td>
-      <td>${sats.toLocaleString()} SATS</td>
-      <td>${satsToGBP(sats)}</td>
+      <td>${item.elo}</td>
+      <td>${item.reward.toLocaleString()} SATS</td>
+      <td>${satsToGBP(item.reward)}</td>
       <td class="status">
         <span class="${completed ? 'completed-text' : 'available-text'}">
           ${completed ? 'COMPLETED' : 'AVAILABLE'}
@@ -288,45 +325,77 @@ function renderTable() {
   });
 }
 
-// ROLL
-async function rollLevel() {
+// 🏆 SCOREBOARD
+function renderScores() {
 
+  const players = {
+    Bucky: 0,
+    Shandalf: 0,
+    Rink: 0
+  };
+
+  levels.forEach(l => {
+    if (l.winner && players.hasOwnProperty(l.winner)) {
+      players[l.winner] += l.reward;
+    }
+  });
+
+  document.getElementById("scoreboard").innerHTML = `
+    <h2 style="color:#f7931a; text-align:center; margin-top:40px;">
+      🏆 Total Sats Won
+    </h2>
+
+    <div style="text-align:center; font-size:1.1rem; margin-top:10px;">
+
+      <p>
+        🔥 Bucky: <b>${players.Bucky.toLocaleString()} SATS</b>
+        <br>
+        💷 ${satsToGBP(players.Bucky)}
+      </p>
+
+      <p>
+        ⚔️ Shandalf: <b>${players.Shandalf.toLocaleString()} SATS</b>
+        <br>
+        💷 ${satsToGBP(players.Shandalf)}
+      </p>
+
+      <p>
+        🧠 Rink: <b>${players.Rink.toLocaleString()} SATS</b>
+        <br>
+        💷 ${satsToGBP(players.Rink)}
+      </p>
+
+    </div>
+  `;
+}
+
+async function rollLevel() {
   const button = document.getElementById("roll-button");
   const result = document.getElementById("result");
   const rollingText = document.getElementById("rolling-text");
 
   const availableLevels = levels.filter(l => l.winner === null);
 
-  if (!availableLevels.length) {
-    result.textContent = "✓";
-    rollingText.textContent = "ALL LEVELS COMPLETE";
-    return;
-  }
+  if (!availableLevels.length) return;
 
   button.disabled = true;
   result.classList.add("rolling");
-  rollingText.textContent = "ROLLING...";
 
   const interval = setInterval(() => {
-    result.textContent = Math.floor(Math.random() * 20) + 1;
+    result.textContent = Math.floor(Math.random() * 42) + 1;
   }, 80);
 
   await new Promise(r => setTimeout(r, 2500));
 
   clearInterval(interval);
 
-  const chosen =
-    availableLevels[Math.floor(Math.random() * availableLevels.length)];
-
-  const sats = chosen.level * 2000;
-
-  const elo = 300 + (chosen.level * 100);
+  const chosen = availableLevels[Math.floor(Math.random() * availableLevels.length)];
 
   result.classList.remove("rolling");
   result.textContent = chosen.level;
 
   rollingText.textContent =
-    `🏆 Elo ${elo} • ${sats.toLocaleString()} SATS • ~${satsToGBP(sats)} GBP`;
+    `🏆 Elo ${chosen.elo} • ${chosen.reward.toLocaleString()} SATS`;
 
   result.classList.add("winner-flash");
 
@@ -337,6 +406,7 @@ async function rollLevel() {
 
 fetchBitcoinPrice();
 renderTable();
+renderScores();
 
 </script>
 
